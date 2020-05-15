@@ -34,7 +34,16 @@ func (websocketServer *WebSocketServer) listenAndServe(port string) {
 			return
 		}
 
-		client := NewClient(conn, websocketServer.hub)
+		userName := r.URL.Query().Get("userName")
+		for client := range websocketServer.hub.clients {
+			if userName == client.userName {
+				conn.WriteMessage(
+					websocket.CloseMessage,
+					websocket.FormatCloseMessage(websocket.CloseNormalClosure, "Username already taken"))
+			}
+		}
+
+		client := NewClient(conn, websocketServer.hub, userName)
 		websocketServer.hub.register <- client
 
 		go client.readPump()
