@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 type Hub struct {
 	clients    map[*Client]bool
@@ -35,6 +38,12 @@ func (hub *Hub) Run() {
 
 func (hub *Hub) registerClient(client *Client) {
 	hub.clients[client] = true
+
+	messageBytes, err := json.Marshal(Message{Sender: client.userName, Message: "Connected"})
+	if err == nil {
+		hub.broadcastMessage(messageBytes)
+	}
+
 	fmt.Printf("Client connected from : %s \n", client.conn.RemoteAddr())
 }
 
@@ -43,6 +52,11 @@ func (hub *Hub) unregisterClient(client *Client) {
 	if ok {
 		delete(hub.clients, client)
 		close(client.send)
+	}
+
+	messageBytes, err := json.Marshal(Message{Sender: client.userName, Message: "Disconnected"})
+	if err == nil {
+		hub.broadcastMessage(messageBytes)
 	}
 }
 
